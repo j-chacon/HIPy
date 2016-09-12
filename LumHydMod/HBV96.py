@@ -13,8 +13,7 @@ import numpy as np
 import scipy.optimize as opt
 
 
-def _precipitation(double temp, double ltt, double utt, double prec, 
-                   double rfcf, double sfcf, double tfac):
+def _precipitation(temp, ltt, utt, prec, rfcf, sfcf, tfac):
     '''
     Precipitation routine
     ---------------------
@@ -38,7 +37,6 @@ def _precipitation(double temp, double ltt, double utt, double prec,
         **_sf - Snowfall [mm]
     '''
     
-    cdef double _rf,_sf
     if temp <= ltt:
         _rf = 0.0
         _sf = prec*sfcf
@@ -54,8 +52,8 @@ def _precipitation(double temp, double ltt, double utt, double prec,
     return _rf, _sf
 
 
-def _snow(double cfmax, double tfac, double temp, double ttm, double cfr, 
-          double cwh, double _rf, double _sf, double wc_old, double sp_old):
+def _snow(cfmax, tfac, temp, ttm, cfr, 
+          cwh, _rf, _sf, wc_old, sp_old):
     '''
     _snow routine
     ------------
@@ -84,7 +82,6 @@ def _snow(double cfmax, double tfac, double temp, double ttm, double cfr,
         **_sp_new -- Snowpack in posterior state [mm]   
     '''
              
-    cdef double _melt, _sp_new, _wc_int, _refr, _in, _wc_new
     if temp > ttm:
     
         if cfmax*(temp-ttm) < sp_old+_sf:
@@ -114,9 +111,8 @@ def _snow(double cfmax, double tfac, double temp, double ttm, double cfr,
     return _in, _wc_new, _sp_new
 
 
-def _soil(double fc, double beta, double etf, double temp, double tm,
-          double e_corr, double lp, double tfac, double c_flux, double inf, 
-          double ep, double sm_old, double uz_old):
+def _soil(fc, beta, etf, temp, tm, e_corr, lp, tfac, c_flux, inf, ep, 
+          sm_old, uz_old):
     '''
     _soil routine
     ------------
@@ -147,26 +143,11 @@ def _soil(double fc, double beta, double etf, double temp, double tm,
         **uz_int_1 -- New value of direct runoff into upper zone
     '''
     
-    cdef double _r, _ep_int, _ea, _cf, sm_new, uz_int_1, qdr
-#    ep = ep/tfac
     qdr = max(sm_old + inf - fc, 0)
     _in = inf - qdr
     _r = ((sm_old/fc)** beta) * _in
     _ep_int = (1.0 + etf*(temp - tm))*e_corr*ep
-    
-#    _r = ((sm_old/fc) ** beta) * _in
-#    _ep_int = e_corr*ep
-#    
-#    if sm_old/(lp*fc) < 1.0: 
-#        _ea = (sm_old/(lp*fc))*_ep_int 
-#    else: 
-#        _ea = _ep_int 
-        
     _ea = max(_ep_int, (sm_old/(lp*fc))*_ep_int)
-#    if c_flux*(1.0 - (sm_old/fc)) < uz_old:
-#        _cf = c_flux*(1.0 - (sm_old/fc))
-#    else:
-#        _cf = uz_old 
     _cf = c_flux*((fc - sm_old)/fc)
     sm_new = max(sm_old + _in - _r + _cf - _ea, 0)        
     uz_int_1 = uz_old + _r - _cf
@@ -174,10 +155,7 @@ def _soil(double fc, double beta, double etf, double temp, double tm,
     return sm_new, uz_int_1, qdr
 
 
-def _response(double tfac, double perc, double alpha, double k, double k1, 
-              double area, double lz_old, double uz_int_1, double qdr):
-             
-    cdef double lz_int_1, uz_int_2, _q_0, _q_1, uz_new, lz_new, q_new
+def _response(tfac, perc, alpha, k, k1, area, lz_old, uz_int_1, qdr):
     
     if perc < uz_int_1: 
         lz_int_1 = lz_old + perc
@@ -294,11 +272,11 @@ def _step_run(p, p2, v, St):
     
     rf, sf = _precipitation(temp, ltt, utt, avg_prec, rfcf, sfcf, tfac)
     inf, wc_new, sp_new = _snow(cfmax, tfac, temp, ttm, cfr, cwh, rf, sf,
-                               wc_old, sp_old)
-    sm_new, uz_int_1, qdr = _soil(fc, beta, etf, temp, tm, e_corr, lp, tfac, c_flux, 
-                            inf, ep, sm_old, uz_old)
+                                wc_old, sp_old)
+    sm_new, uz_int_1, qdr = _soil(fc, beta, etf, temp, tm, e_corr, lp, tfac, 
+                                  c_flux, inf, ep, sm_old, uz_old)
     q_new, uz_new, lz_new = _response(tfac, perc, alpha, k, k1, area, lz_old, 
-                                    uz_int_1, qdr)
+                                      uz_int_1, qdr)
     
     return q_new, [sp_new, sm_new, uz_new, lz_new, wc_new]
 
@@ -424,8 +402,8 @@ def _nse(x, y):
     b = np.square(np.subtract(x, np.nanmean(x)))
     if a.any < 0.0:
         return(np.nan)
-    cdef double f = 1.0 - (np.nansum(a)/np.nansum(b))
-    return(f)
+    f = 1.0 - (np.nansum(a)/np.nansum(b))
+    return f
 
 
 def _rmse(x,y):
@@ -436,5 +414,5 @@ def _rmse(x,y):
     erro = np.square(np.subtract(x,y))
     if erro.any < 0:
         return(np.nan)
-    cdef double f = np.sqrt(1.*np.nanmean(erro))
-    return(f)
+    f = np.sqrt(1.*np.nanmean(erro))
+    return f

@@ -42,7 +42,7 @@ import dist
 
 ERROR_CODE = 9999
 
-def _cubic(x,y,val,xt,yt):
+def _cubic(x, y, val, xt, yt):
     '''
     Internal function for cubic interpolation of a single instance. This is a \
     wrapper of scipy function
@@ -67,7 +67,7 @@ def _cubic(x,y,val,xt,yt):
     r = griddata((x,y) ,val , (xt,yt), method='cubic')
     return r
     
-def _idw(x,y,val,xt,yt,power):
+def _idw(x , y, val, xt, yt, power):
     '''
     Internal function for inverse distance weighting interpolation of a single\
      instance
@@ -98,7 +98,7 @@ def _idw(x,y,val,xt,yt,power):
     r = []
     for i in xrange(0,len(xt)):
         if numpy.min(dis[i]) < 0.0001:
-            r.append(val[numpy.argmin(dis)])
+            r.append(val[numpy.argmin(dis[i])])
             
         else:
             d = numpy.array(dis[i])
@@ -111,7 +111,7 @@ def _idw(x,y,val,xt,yt,power):
     
     return r
 
-def _linear(x,y,val, xt, yt):
+def _linear(x, y, val, xt, yt):
     '''
     Internal function for linear interpolation of a single instance. This is a\
      wrapper of scipy function
@@ -136,7 +136,7 @@ def _linear(x,y,val, xt, yt):
     r = griddata((x,y) ,val , (xt,yt), method='linear')
     return r
 
-def _nearest(x,y,val,xt,yt):  
+def _nearest(x, y, val, xt, yt):  
     '''
     Internal function for nearest neighbour interpolation of a single instance.
     
@@ -206,7 +206,7 @@ def _rbf(x, y, val, xt, yt, rbf_function, rbf_epsilon):
     r = cls(xt,yt)
     return r
     
-def interpolate(stations,targets,records,method='nearest',idw_power=2.0,
+def interpolate(stations, targets, records, method='nearest', idw_power=2.0,
            rbf_function='multiquadric', rbf_epsilon=3.0,
            tmin=0, tmax='def',val_min=-1e99,val_max=1e99):
     '''
@@ -281,12 +281,12 @@ def interpolate(stations,targets,records,method='nearest',idw_power=2.0,
         elif method is 'rbf':
             temp = _rbf(x,y,records[i],xt,yt,rbf_function,rbf_epsilon)
         elif method is 'idw':
-            temp = _idw(x,y,records[i],xt,yt,idw_power,val_min)
+            temp = _idw(x,y,records[i],xt,yt,idw_power)
         else:
             print 'Selected method is not valid'
             return ERROR_CODE, ERROR_CODE
         
-        numpy.clip(temp,val_min,val_max)
+        temp = numpy.clip(temp, val_min, val_max)
         z.append(temp)
         zavg.append(numpy.average(temp))
     

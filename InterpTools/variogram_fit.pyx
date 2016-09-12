@@ -115,7 +115,7 @@ def gaussian_sv(h,x):
     if h == 0:
         return S
     if h/R > 1:
-        return N+S
+        return N
     try:
         SV = S - (-N + S * (1-numpy.exp(-1.*numpy.square(h)/R)))
     except OverflowError:
@@ -283,7 +283,7 @@ def matern_sv(h,x):
     SV = (S-N)*a*(b**v)*c
     return SV
     
-def fit_function(x,experimental_sv,j,candidate_sv):
+def fit_function(x, experimental_sv, j, candidate_sv):
     '''
     Calculate the value of the RMSE between theoretical and experimental \
     semivariograms
@@ -304,8 +304,8 @@ def fit_function(x,experimental_sv,j,candidate_sv):
     temp2 = []
     cdef float F
     cdef int fail = 0
-    for i in xrange (0,len(experimental_sv)):
-        temp.append(candidate_sv[j](experimental_sv[i][0],x))
+    for i in xrange (len(experimental_sv)):
+        temp.append(candidate_sv[j](experimental_sv[i][0], x))
         temp2.append(experimental_sv[i][1])
-    F = _RMSE(temp,temp2)
+    F = _RMSE(temp, temp2)
     return F, [], fail

@@ -83,7 +83,7 @@ def weights(data, covariance=None):
         the precipitation events in the serie.
     '''
     if covariance is None:
-        covariance = numpy.cov(numpy.transpose(data))
+        covariance = numpy.cov(numpy.transpose(data))   
 
     data = numpy.array(data)
     if numpy.linalg.det(covariance) == 0:
